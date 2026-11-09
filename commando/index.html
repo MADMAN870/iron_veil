@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Iron Veil — Commandement Tactique</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="libraries/p5.min.js"></script>
+  <script src="music.js"></script>
+  <script src="vehicle.js"></script>
+  <script src="pathfinding.js"></script>
+  <script src="world.js"></script>
+  <script src="bullet.js"></script>
+  <script src="soldier.js"></script>
+  <script src="enemy.js"></script>
+  <script src="missions.js"></script>
+  <script src="selection.js"></script>
+  <script src="sketch.js"></script>
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand">IRON VEIL</div>
+    <div id="missionName">Mission</div>
+    <div id="modeBadge" class="badge badge-play">MODE JEU</div>
+  </header>
+
+  <main id="layout">
+    <div id="battlefieldContainer"><!-- canvas insere ici --></div>
+
+    <aside id="panel">
+      <section class="block">
+        <h2>Objectifs</h2>
+        <ul id="objectiveList"></ul>
+      </section>
+
+      <section class="block">
+        <h2>Escouade <span class="hint">(Tab : mode commandement · clics multiples : ajouter/retirer)</span></h2>
+        <div id="squadList"></div>
+      </section>
+
+      <section class="block">
+        <h2>Commandes <span class="hint">(mode commandement)</span></h2>
+        <div class="cmd-grid">
+          <button id="btnHold" title="Tenir : immobile, riposte si un ennemi est visible">Tenir (H)</button>
+          <button id="btnCombat" title="Combat : cherche et engage les hostiles">Combat (C)</button>
+          <button id="btnMove" title="M puis clic sur la carte">Déplacer (M)</button>
+          <button id="btnFollow" title="Suivre : cliquez sur l'allie a suivre (joueur ou IA)">Suivre (F)</button>
+          <button id="btnHeal" title="Soigner : cliquez sur l'allie a soigner (joueur compris) — Médic uniquement">Soigner (V)</button>
+          <button id="btnRegroup" title="Se rallier au joueur">Rallier (R)</button>
+          <button id="btnDefend" title="Défendre la zone">Défendre (B)</button>
+          <button id="btnSelectAll" title="Selectionner tout le monde (A)">Tous (A)</button>
+          <button id="btnClearSel" title="Effacer la selection (X) — les ordres visent alors toute l'escouade">Aucun (X)</button>
+        </div>
+        <div id="pickHint" class="pick-hint" hidden></div>
+      </section>
+
+      <section class="block">
+        <h2>Armement</h2>
+        <div id="weaponRow">
+          <button class="weapon-btn" data-weapon="pistol">1 Pistolet</button>
+          <button class="weapon-btn" data-weapon="rifle">2 Fusil</button>
+          <button class="weapon-btn" data-weapon="smg">3 SMG</button>
+        </div>
+        <div class="ammo-line">Munitions : <b id="ammoLabel">8 / 8</b> <span id="reloadLabel"></span></div>
+        <div class="ammo-line">Grenades : <b id="grenadeLabel">2</b> <span class="hint">(G en mode jeu)</span></div>
+      </section>
+
+      <section class="block">
+        <h2>Carte tactique</h2>
+        <canvas id="minimap" width="204" height="128"></canvas>
+      </section>
+
+      <section class="block">
+        <h2><label class="debug-label"><input type="checkbox" id="debugToggle" checked> Mode debug IA</label></h2>
+        <div id="aiLab">
+          <div class="lab-title">AI LAB — <span id="labName">—</span></div>
+          <div class="lab-row">Etat FSM : <b id="labState">—</b></div>
+          <div class="lab-row">|Vitesse desiree| : <b id="labDesired">0.00</b></div>
+          <div class="lab-row">|Vitesse courante| : <b id="labVelocity">0.00</b></div>
+          <div class="lab-row">|Force steering| : <b id="labSteering">0.00</b></div>
+          <div class="lab-row">Rayon de detection : <b id="labRadius">—</b></div>
+          <div class="lab-row">Voisins : <b id="labNeighbors">0</b></div>
+          <div class="lab-row">Poids : <b id="labWeights">—</b></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>Journal</h2>
+        <div id="log"></div>
+      </section>
+    </aside>
+  </main>
+
+  <!-- Flash rouge quand le joueur est touche -->
+  <div id="damageFlash"></div>
+
+  <div id="modal" class="visible">
+    <div class="modal-card">
+      <h1 id="modalTitle">IRON VEIL</h1>
+      <p id="modalDesc">Sept operations tactiques. Vous incarnez un soldat (WASD + souris) en mode jeu, ou commandez votre escouade (Tab) en mode commandement. Les allies et les hostiles agissent par Steering Behaviors et machines a etats.</p>
+      <div id="missionStats" class="mission-stats"></div>
+      <div id="missionSelect"></div>
+      <div class="modal-actions">
+        <button id="modalBtn" class="big-btn">Lancer la mission</button>
+        <button id="modalMenuBtn" class="ghost-btn">Retour au menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu Pause (P) -->
+  <div id="pauseModal">
+    <div class="modal-card">
+      <h1 class="amber-glow">PAUSE</h1>
+      <p id="pauseDesc">Mission suspendue. Choisissez une action :</p>
+      <div class="modal-actions" style="flex-direction: column; gap: 10px; width: 100%; max-width: 260px; margin: 0 auto;">
+        <button id="resumeBtn" class="big-btn" style="width: 100%;">Reprendre (P)</button>
+        <button id="restartMissionBtn" class="ghost-btn" style="width: 100%;">Recommencer la mission</button>
+        <button id="pauseMenuBtn" class="ghost-btn" style="width: 100%;">Menu principal</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
